@@ -157,6 +157,9 @@ export async function buildWorkbook(loanData) {
   buildScheduleSheet(wb, loanData);
   buildChartsSheet(wb);
 
+  // Store schedule row count for reliable chart range computation
+  wb._fincalScheduleRows = loanData.amort_schedule.filter(r => r["Installment No"] > 0).length;
+
   return wb;
 }
 
@@ -311,7 +314,7 @@ function drawingRelsXml() {
 // ── Core injection logic ──────────────────────────────────────────────────────
 
 async function doInject(inputBuf, workbook) {
-  const scheduleRowCount = workbook.getWorksheet("Schedule").rowCount - 1;
+  const scheduleRowCount = workbook._fincalScheduleRows ?? (workbook.getWorksheet("Schedule").rowCount - 1);
 
   const zip = await JSZip.loadAsync(inputBuf);
 

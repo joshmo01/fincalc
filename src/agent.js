@@ -13,7 +13,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { Bash }  from "just-bash";
-import { fincalCommands } from "./commands.js";
+import { fincalCommands, getLastResult } from "./commands.js";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -182,14 +182,23 @@ export class FinCalAgent {
           const script = block.input?.script ?? "";
           const { stdout, stderr, exitCode } = await execBash(script, this.verbose);
 
-          // Capture raw FinCalEngine JSON for Excel export
-          if (exitCode === 0 && stdout.trim().startsWith("{")) {
-            try {
-              const parsed = JSON.parse(stdout.trim());
-              if (parsed.amort_schedule && parsed.totals && parsed.returns) {
-                this.lastLoanData = parsed;
-              }
-            } catch { /* not JSON, ignore */ }
+          // Capture raw FinCalEngine JSON for Excel export.
+          // We use getLastResult() from commands.js rather than parsing stdout,
+          // because Claude always pipes output through fincal-summary (formatted text).
+          const raw = getLastResult();
+          if (raw?.amort_schedule && raw?.totals && raw?.returns) {
+            // Also extract loan params from the bash script args for the Summary sheet
+            const principalMatch = script.match(/--principal\s+([\d.]+)/);
+            const rateMatch      = script.match(/--rate\s+([\d.]+)/);
+            const termMatch      = script.match(/--term\s+(\d+)/);
+            this.lastLoanData = {
+              ...raw,
+              loan: {
+                principal: principalMatch ? parseFloat(principalMatch[1]) : null,
+                rate:      rateMatch      ? rateMatch[1]                  : null,
+                termMths:  termMatch      ? parseInt(termMatch[1], 10)    : null,
+              },
+            };
           }
 
           toolResults.push({

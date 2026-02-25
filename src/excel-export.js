@@ -117,7 +117,9 @@ function buildScheduleSheet(wb, data) {
     ];
     vals.forEach((v, col) => {
       const cell  = row.getCell(col + 1);
-      cell.value  = v;
+      // Columns 2-6 are numeric — force Number() so ExcelJS stores them as
+      // actual numbers (not shared strings). Charts require numeric cells.
+      cell.value  = col >= 2 ? Number(v) : v;
       cell.border = borderAll();
       if (col >= 2) {
         cell.numFmt    = "#,##0.00";

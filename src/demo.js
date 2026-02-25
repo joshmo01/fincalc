@@ -70,6 +70,38 @@ async function testExcelExport() {
   console.log("✅ Excel export test passed");
 }
 
+async function testExcelExportRealData() {
+  console.log(`\n${"─".repeat(60)}`);
+  console.log("TEST: Excel export — real FinCalEngine data");
+  console.log("─".repeat(60));
+
+  const bash   = createBash();
+  const result = await bash.exec(
+    `fincal-emi --principal 1000000 --rate 15 --term 60 --start 2026-02-25 --emi 2026-03-25`
+  );
+  if (result.exitCode !== 0) {
+    console.log("⚠️  Skipped: FinCalEngine API unavailable");
+    return;
+  }
+
+  const loanData = JSON.parse(result.stdout.trim());
+  loanData.loan  = { principal: 1000000, rate: "15", termMths: 60 };
+
+  const wb   = await buildWorkbook(loanData);
+  const path = "/tmp/fincal-realdata-test.xlsx";
+  await writeToFile(wb, path);
+
+  if (!existsSync(path))          throw new Error("File not created");
+  if (statSync(path).size < 5000) throw new Error("File suspiciously small");
+
+  const schedSheet = wb.getWorksheet("Schedule");
+  const dataRows   = schedSheet.rowCount - 1;
+  if (dataRows !== 60) throw new Error(`Expected 60 schedule rows, got ${dataRows}`);
+
+  unlinkSync(path);
+  console.log(`✅ Real-data export test passed (${dataRows} schedule rows)`);
+}
+
 async function main() {
   console.log("FinCalAgent — Sandbox Integration Tests");
   console.log("(No Anthropic API key required for this test)\n");
@@ -116,6 +148,7 @@ printf '%s\n%s\n' "$FLAT" "$STEP" | fincal-compare --labels "Flat EMI,Step-Up 10
   );
 
   await testExcelExport();
+  await testExcelExportRealData();
 
   console.log("\n✅ All tests complete.");
 }

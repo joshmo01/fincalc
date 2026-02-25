@@ -189,12 +189,169 @@ export async function toBuffer(workbook) {
   }
 }
 
-// ── Chart injection stubs (replaced in Task 4) ────────────────────────────────
+// ── Chart XML builders ────────────────────────────────────────────────────────
+
+function chartXmlStackedBar(scheduleRowCount) {
+  const lastRow = scheduleRowCount + 1; // +1 for header row
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"
+              xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+              xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <c:chart>
+    <c:title>
+      <c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>Principal vs Interest per Period</a:t></a:r></a:p></c:rich></c:tx>
+      <c:overlay val="0"/>
+    </c:title>
+    <c:autoTitleDeleted val="0"/>
+    <c:plotArea>
+      <c:barChart>
+        <c:barDir val="col"/>
+        <c:grouping val="stacked"/>
+        <c:varyColors val="0"/>
+        <c:ser>
+          <c:idx val="0"/><c:order val="0"/>
+          <c:tx><c:strRef><c:f>Schedule!$E$1</c:f><c:strCache><c:ptCount val="1"/><c:pt idx="0"><c:v>Interest</c:v></c:pt></c:strCache></c:strRef></c:tx>
+          <c:cat><c:numRef><c:f>Schedule!$A$2:$A$${lastRow}</c:f></c:numRef></c:cat>
+          <c:val><c:numRef><c:f>Schedule!$E$2:$E$${lastRow}</c:f></c:numRef></c:val>
+        </c:ser>
+        <c:ser>
+          <c:idx val="1"/><c:order val="1"/>
+          <c:tx><c:strRef><c:f>Schedule!$F$1</c:f><c:strCache><c:ptCount val="1"/><c:pt idx="0"><c:v>Principal</c:v></c:pt></c:strCache></c:strRef></c:tx>
+          <c:cat><c:numRef><c:f>Schedule!$A$2:$A$${lastRow}</c:f></c:numRef></c:cat>
+          <c:val><c:numRef><c:f>Schedule!$F$2:$F$${lastRow}</c:f></c:numRef></c:val>
+        </c:ser>
+        <c:axId val="1"/><c:axId val="2"/>
+      </c:barChart>
+      <c:catAx><c:axId val="1"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="b"/><c:crossAx val="2"/></c:catAx>
+      <c:valAx><c:axId val="2"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="l"/><c:crossAx val="1"/></c:valAx>
+    </c:plotArea>
+    <c:plotVisOnly val="1"/>
+  </c:chart>
+</c:chartSpace>`;
+}
+
+function chartXmlLineBalance(scheduleRowCount) {
+  const lastRow = scheduleRowCount + 1;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"
+              xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+              xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <c:chart>
+    <c:title>
+      <c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>Outstanding Balance</a:t></a:r></a:p></c:rich></c:tx>
+      <c:overlay val="0"/>
+    </c:title>
+    <c:autoTitleDeleted val="0"/>
+    <c:plotArea>
+      <c:lineChart>
+        <c:grouping val="standard"/>
+        <c:varyColors val="0"/>
+        <c:ser>
+          <c:idx val="0"/><c:order val="0"/>
+          <c:tx><c:strRef><c:f>Schedule!$G$1</c:f><c:strCache><c:ptCount val="1"/><c:pt idx="0"><c:v>Closing Balance</c:v></c:pt></c:strCache></c:strRef></c:tx>
+          <c:cat><c:numRef><c:f>Schedule!$A$2:$A$${lastRow}</c:f></c:numRef></c:cat>
+          <c:val><c:numRef><c:f>Schedule!$G$2:$G$${lastRow}</c:f></c:numRef></c:val>
+        </c:ser>
+        <c:axId val="3"/><c:axId val="4"/>
+      </c:lineChart>
+      <c:catAx><c:axId val="3"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="b"/><c:crossAx val="4"/></c:catAx>
+      <c:valAx><c:axId val="4"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="l"/><c:crossAx val="3"/></c:valAx>
+    </c:plotArea>
+    <c:plotVisOnly val="1"/>
+  </c:chart>
+</c:chartSpace>`;
+}
+
+function drawingXml() {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"
+           xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+           xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <xdr:twoCellAnchor moveWithCells="1" sizeWithCells="1">
+    <xdr:from><xdr:col>0</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>
+    <xdr:to><xdr:col>9</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>15</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>
+    <xdr:graphicFrame macro="">
+      <xdr:nvGraphicFramePr>
+        <xdr:cNvPr id="2" name="Chart 1"/>
+        <xdr:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></xdr:cNvGraphicFramePr>
+      </xdr:nvGraphicFramePr>
+      <xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm>
+      <a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart">
+        <c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" r:id="rId1"/>
+      </a:graphicData></a:graphic>
+    </xdr:graphicFrame>
+    <xdr:clientData/>
+  </xdr:twoCellAnchor>
+  <xdr:twoCellAnchor moveWithCells="1" sizeWithCells="1">
+    <xdr:from><xdr:col>0</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>17</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>
+    <xdr:to><xdr:col>9</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>32</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>
+    <xdr:graphicFrame macro="">
+      <xdr:nvGraphicFramePr>
+        <xdr:cNvPr id="3" name="Chart 2"/>
+        <xdr:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></xdr:cNvGraphicFramePr>
+      </xdr:nvGraphicFramePr>
+      <xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm>
+      <a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart">
+        <c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" r:id="rId2"/>
+      </a:graphicData></a:graphic>
+    </xdr:graphicFrame>
+    <xdr:clientData/>
+  </xdr:twoCellAnchor>
+</xdr:wsDr>`;
+}
+
+function drawingRelsXml() {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="../charts/chart1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="../charts/chart2.xml"/>
+</Relationships>`;
+}
+
+// ── Core injection logic ──────────────────────────────────────────────────────
+
+async function doInject(inputBuf, workbook) {
+  const scheduleRowCount = workbook.getWorksheet("Schedule").rowCount - 1;
+
+  const zip = await JSZip.loadAsync(inputBuf);
+
+  // Find which sheet index is "Charts" (1-indexed in xl/worksheets/sheetN.xml)
+  let chartsSheetIdx = 0;
+  workbook.worksheets.forEach((ws, i) => {
+    if (ws.name === "Charts") chartsSheetIdx = i + 1;
+  });
+  if (!chartsSheetIdx) throw new Error("Charts worksheet not found in workbook");
+
+  const sheetRelsPath = `xl/worksheets/_rels/sheet${chartsSheetIdx}.xml.rels`;
+
+  // Add chart XML, drawing, and rels files
+  zip.file("xl/charts/chart1.xml",  chartXmlStackedBar(scheduleRowCount));
+  zip.file("xl/charts/chart2.xml",  chartXmlLineBalance(scheduleRowCount));
+  zip.file("xl/drawings/drawing1.xml",       drawingXml());
+  zip.file("xl/drawings/_rels/drawing1.xml.rels", drawingRelsXml());
+
+  // Link the Charts sheet to the drawing
+  zip.file(sheetRelsPath, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/>
+</Relationships>`);
+
+  // Register new parts in [Content_Types].xml
+  const ctRaw     = await zip.file("[Content_Types].xml").async("string");
+  const chartCt   = `<Override PartName="/xl/charts/chart1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>
+  <Override PartName="/xl/charts/chart2.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>
+  <Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>`;
+  const ctUpdated = ctRaw.replace("</Types>", `  ${chartCt}\n</Types>`);
+  zip.file("[Content_Types].xml", ctUpdated);
+
+  return zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+}
+
 async function injectCharts(filepath, workbook) {
   const raw = readFileSync(filepath);
-  return raw;
+  return doInject(raw, workbook);
 }
 
 async function injectChartsToBuffer(buf, workbook) {
-  return buf;
+  return doInject(buf, workbook);
 }

@@ -339,6 +339,16 @@ async function doInject(inputBuf, workbook) {
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/>
 </Relationships>`);
 
+  // Inject <drawing> reference into the Charts sheet XML so Excel actually renders the charts.
+  // Without this tag in the worksheet XML, Excel ignores the .rels relationship entirely.
+  const sheetXmlPath = `xl/worksheets/sheet${chartsSheetIdx}.xml`;
+  const sheetXml     = await zip.file(sheetXmlPath).async("string");
+  const sheetXmlUpd  = sheetXml.replace(
+    "</worksheet>",
+    `<drawing r:id="rId1" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/></worksheet>`
+  );
+  zip.file(sheetXmlPath, sheetXmlUpd);
+
   // Register new parts in [Content_Types].xml
   const ctRaw     = await zip.file("[Content_Types].xml").async("string");
   const chartCt   = `<Override PartName="/xl/charts/chart1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>
